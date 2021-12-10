@@ -1,0 +1,48 @@
+{
+  "name": "ethereum-proof",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "jest",
+    "build": "tsc"
+  },
+  "author": "",
+  "license": "MIT",
+  "description": "",
+  "devDependencies": {
+    "@babel/core": "^7.16.0",
+    "@babel/preset-env": "^7.16.4",
+    "@types/jest": "^27.0.3",
+    "@types/node": "^16.11.12",
+    "babel-jest": "^27.4.2",
+    "jest": "^27.4.3",
+    "ts-jest": "^27.1.1",
+    "typescript": "^4.5.3"
+  },
+  "dependencies": {
+    "@depay/web3-blockchains": "^3.0.0",
+    "@depay/web3-mock": "^9.2.0",
+    "bignumber.js": "^9.0.1",
+    "keccak256": "^1.0.3",
+    "merkle-patricia-tree": "^4.2.2",
+    "moment": "^2.29.1",
+    "rlp": "^2.2.7",
+    "web3": "^1.6.1"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "jsx",
+      "tsx",
+      "ts"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "globals": {
+      "ts-jest": {
+        "tsconfig": "tsconfig.json"
+      }
+    }
+  }
+}
