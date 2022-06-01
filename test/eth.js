@@ -1,7 +1,7 @@
 var eth = {
         latestBlock : 2744,
-        tx : {},
-        block: {},
+        txs : [],
+        blocks: [],
         receipt: {}
     },
     moment = require('moment'),
@@ -73,18 +73,11 @@ eth.getBlockNumber = async function(callBack){
 };
 
 // Only retrieves block by number atm
-//eth.getBlock = function(blockNumber, populateTransactions, callBack){
 eth.getBlock = async function(blockNumber){
 
-    return eth.block;
-    /*var block = lastBlocks[blockNumber];
-
-    if(!block){
-        return callBack('Block not found', null)
-    }
-
-    callBack(null, block);*/
-
+  
+  const block = eth.blocks.find(block => block.number == blockNumber);
+  return block;
 
 };
 
@@ -98,7 +91,8 @@ eth.getGasPrice = function(callBack){
 
 eth.getTransaction = async function(transactionHash){
 
-  return eth.tx;
+  const tx = eth.txs.find(tx => tx.hash == transactionHash);
+  return tx;
 
 };
 

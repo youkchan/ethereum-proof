@@ -1,11 +1,13 @@
 {
   "name": "ethereum-proof",
-  "version": "1.0.2",
+  "version": "1.0.12",
   "main": "dist/index.js",
   "scripts": {
     "test": "jest",
-    "build": "tsc"
+    "build": "tsc",
+    "build-pub": "tsc && npm publish"
   },
+  "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/youkchan/ethereum-proof"
@@ -26,7 +28,10 @@
   "dependencies": {
     "@depay/web3-blockchains": "^3.0.0",
     "@depay/web3-mock": "^9.2.0",
+    "@truffle/hdwallet-provider": "^2.0.4",
     "bignumber.js": "^9.0.1",
+    "bn.js": "^5.2.0",
+    "keccak256": "^1.0.6",
     "merkle-patricia-tree": "^4.2.2",
     "moment": "^2.29.1",
     "rlp": "^2.2.7",
