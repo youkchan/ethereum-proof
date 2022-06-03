@@ -183,7 +183,7 @@ test('composeEvidence', async () => {
   const result = await ethereumProof.composeEvidence(txhash, false);
   expect("0x" + keccak256(result.transaction).toString('hex')).toBe(txhash);
   const blockNumber = 5990997;
-  expect(result.blockNumber).toBe("0x" + blockNumber.toString(16));
+  expect(result.blockNumber).toBe(blockNumber);
   expect(result.blockHash).toBe("0xd0c07346e4042ad2ce354f6ca9bc90f5814540cd749fd4770677751d92672254");
 });
 
@@ -197,7 +197,7 @@ test('composeEvidence full', async () => {
   const result = await ethereumProof.composeEvidence(txhash, true);
   expect("0x" + keccak256(result.transaction).toString('hex')).toBe(txhash);
   const blockNumber = testBlockData[1].number
-  expect(result.blockNumber).toBe("0x" + blockNumber.toString(16));
+  expect(result.blockNumber).toBe(blockNumber);
   expect(result.blockHash).toBe(testBlockData[1].hash);
   const txProofBuffer = result.txProof.map((x) => {return Buffer.from(x.slice(2), 'hex');});
   const indexString = result.path.join("");
