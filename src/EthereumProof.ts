@@ -216,7 +216,8 @@ export default class EthereumProof {
 
       console.log("End Compose Evidence Successfully");
       return {
-        blockNumber: await this.web3.utils.toHex(response.blockNumber), 
+        //blockNumber: await this.web3.utils.toHex(response.blockNumber), 
+        blockNumber: response.blockNumber, 
         blockHash: response.blockHash,
         txReceiptProof: stringReceiptProofArray, 
         txProof: stringProofArray,
