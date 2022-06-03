@@ -240,5 +240,14 @@ test('composeEvidence full', async () => {
   expect(result.rawBlockHeader).toStrictEqual(expectedRawBlockHeader);
 });
 
+test('composeTx contractCreation', async () => {
+  const txhash = '0x4a0c6a5cd5f927974943f0f18ea99b35a2f628ef06b42b6b75bdf75df8e5f138';
+  let web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  web3.eth.txs = testTxData;
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeTx(txhash);
+  expect("0x" + keccak256(result.tx).toString('hex')).toBe(txhash);
+});
+
 
 

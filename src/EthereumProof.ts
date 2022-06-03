@@ -29,7 +29,7 @@ export default class EthereumProof {
       const result = Object.fromEntries(
         Object.entries(_object)
         .map(([ key, value ]) => {
-          if(value instanceof Array){
+          if(value instanceof Array || value == null){
             return [ key, value ];
           }
           let param = String(value);
