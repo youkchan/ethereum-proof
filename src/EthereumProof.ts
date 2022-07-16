@@ -77,7 +77,9 @@ export default class EthereumProof {
       txData1.data =  response.input;
  
       if(response.type != "0x" && response.type != undefined) {
-          txData1.accessList=  response.accessList;
+          txData1.accessList =  response.accessList.map((item: any) => {
+            return Object.values(item);
+          });
       }
  
       txData1.v = response.v;
