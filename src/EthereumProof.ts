@@ -161,75 +161,79 @@ export default class EthereumProof {
             rawTx: Array<any>,
             rawBlockHeader : Array<any>
         }>{
-
-      console.log("Start Compose Evidence");
-      let response: any;
-      response = await this.web3.eth.getTransaction(_changerTxHash);
-      const changerTx = await this.composeTx(_changerTxHash);
-      const changerTxIndex = rlp.encode(changerTx.index);
-      const isEther = response.value !== "0" ? true : false;
-      let encodedTxReceipt = "0x";
-      if(!isEther) {
-        const changerTxReceipt =await this.composeTxReceipt(_changerTxHash, changerTx.txType);
-        encodedTxReceipt ="0x" + changerTxReceipt.txReceipt.toString('hex');
-      }
-
-
-      let stringProofArray: Array<string> = [];
-      let stringReceiptProofArray: Array<string> = [];
-      let rawBlockHeader: Array<any> = [];
-      let rawTx: Array<any> = [];
-      if(_isFullEvidenceNeeded) {
-        const block = await this.web3.eth.getBlock(response.blockNumber);
-        const composedBlockHeader = await this.composeBlockHeader(response.blockNumber);
-        rawBlockHeader = composedBlockHeader.rawHeader;
-        rawTx = Object.values(changerTx.rawTx)
-        const txs = block.transactions;
-        const txTrie = new Trie()
-        const txReceiptTrie = new Trie()
-        for (let i = 0; i < txs.length; i++) {
-          const composedTx = await this.composeTx(txs[i]);
-          const key = rlp.encode(composedTx.index);
-          await txTrie.put(key, composedTx.tx);
-          if(!isEther) {
-            const composedTxReceipt =await this.composeTxReceipt(txs[i], composedTx.txType);
-            await txReceiptTrie.put(key, composedTxReceipt.txReceipt);
-          }
-        }
-        const proof = await Trie.createProof(txTrie, changerTxIndex);
-        stringProofArray = proof.map((x) => {return "0x" + x.toString('hex');});
-
+      try {
+        console.log("Start Compose Evidence");
+        let response: any;
+        response = await this.web3.eth.getTransaction(_changerTxHash);
+        const changerTx = await this.composeTx(_changerTxHash);
+        const changerTxIndex = rlp.encode(changerTx.index);
+        const isEther = response.value !== "0" ? true : false;
+        let encodedTxReceipt = "0x";
         if(!isEther) {
-          const receiptProof = await Trie.createProof(txReceiptTrie, changerTxIndex);
-          stringReceiptProofArray = receiptProof.map((x) => {return "0x" + x.toString('hex');});
+          const changerTxReceipt =await this.composeTxReceipt(_changerTxHash, changerTx.txType);
+          encodedTxReceipt ="0x" + changerTxReceipt.txReceipt.toString('hex');
         }
 
+
+        let stringProofArray: Array<string> = [];
+        let stringReceiptProofArray: Array<string> = [];
+        let rawBlockHeader: Array<any> = [];
+        let rawTx: Array<any> = [];
+        if(_isFullEvidenceNeeded) {
+          const block = await this.web3.eth.getBlock(response.blockNumber);
+          const composedBlockHeader = await this.composeBlockHeader(response.blockNumber);
+          rawBlockHeader = composedBlockHeader.rawHeader;
+          rawTx = Object.values(changerTx.rawTx)
+          const txs = block.transactions;
+          const txTrie = new Trie()
+          const txReceiptTrie = new Trie()
+          for (let i = 0; i < txs.length; i++) {
+            const composedTx = await this.composeTx(txs[i]);
+            const key = rlp.encode(composedTx.index);
+            await txTrie.put(key, composedTx.tx);
+            if(!isEther) {
+              const composedTxReceipt =await this.composeTxReceipt(txs[i], composedTx.txType);
+              await txReceiptTrie.put(key, composedTxReceipt.txReceipt);
+            }
+          }
+          const proof = await Trie.createProof(txTrie, changerTxIndex);
+          stringProofArray = proof.map((x) => {return "0x" + x.toString('hex');});
+
+          if(!isEther) {
+            const receiptProof = await Trie.createProof(txReceiptTrie, changerTxIndex);
+            stringReceiptProofArray = receiptProof.map((x) => {return "0x" + x.toString('hex');});
+          }
+
+        }
+
+        const encodedTx = "0x" + changerTx.tx.toString('hex');
+        const txInput = changerTx.rawTx.data.slice(2);
+        const txInputStart = encodedTx.indexOf(txInput);
+        const txInputEnd = txInputStart + txInput.length;
+        
+        const index = changerTxIndex.toString('hex');
+        const path = Array.prototype.map.call(index, function(x) {
+          return parseInt(x, 16);
+        })
+
+        console.log("End Compose Evidence Successfully");
+        return {
+          //blockNumber: await this.web3.utils.toHex(response.blockNumber), 
+          blockNumber: response.blockNumber, 
+          blockHash: response.blockHash,
+          txReceiptProof: stringReceiptProofArray, 
+          txProof: stringProofArray,
+          transaction: encodedTx, 
+          txDataSpot: [txInputStart, txInputEnd], 
+          path: path,
+          txReceipt: encodedTxReceipt, 
+          rawTx: rawTx,
+          rawBlockHeader: rawBlockHeader,
+        };
+      } catch (err: any) {
+        console.log(err);
+        throw new Error(err.toString());
       }
-
-      const encodedTx = "0x" + changerTx.tx.toString('hex');
-      const txInput = changerTx.rawTx.data.slice(2);
-      const txInputStart = encodedTx.indexOf(txInput);
-      const txInputEnd = txInputStart + txInput.length;
-      
-      const index = changerTxIndex.toString('hex');
-      const path = Array.prototype.map.call(index, function(x) {
-        return parseInt(x, 16);
-      })
-
-      console.log("End Compose Evidence Successfully");
-      return {
-        //blockNumber: await this.web3.utils.toHex(response.blockNumber), 
-        blockNumber: response.blockNumber, 
-        blockHash: response.blockHash,
-        txReceiptProof: stringReceiptProofArray, 
-        txProof: stringProofArray,
-        transaction: encodedTx, 
-        txDataSpot: [txInputStart, txInputEnd], 
-        path: path,
-        txReceipt: encodedTxReceipt, 
-        rawTx: rawTx,
-        rawBlockHeader: rawBlockHeader,
-      };
     }
 
 
