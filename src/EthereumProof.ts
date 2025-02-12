@@ -166,10 +166,6 @@ export default class EthereumProof {
         list.push(block.parentBeaconBlockRoot);
       }
 
-      if(block.requestsHash != undefined && block.requestsHash != "") {
-        list.push(block.requestsHash);
-      }
-
       return {header: rlp.encode(list), rawHeader: list};
 
     }
