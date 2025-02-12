@@ -6,6 +6,8 @@ const keccak256 = require('keccak256');
 const testTxData = require('./json/tx.json');
 const testBlockData = require('./json/block.json');
 const testReceiptData = require('./json/receipt.json');
+//const HDWalletProvider = require('@truffle/hdwallet-provider');
+const Web3Real = require('web3');
 
 let ethereumProof: EthereumProof;
 
@@ -195,6 +197,7 @@ test('composeEvidence full', async () => {
   web3.eth.blocks = testBlockData;
   ethereumProof = new EthereumProof(web3);
   const result = await ethereumProof.composeEvidence(txhash, true);
+  console.log(result)
   expect("0x" + keccak256(result.transaction).toString('hex')).toBe(txhash);
   const blockNumber = testBlockData[1].number
   expect(result.blockNumber).toBe(blockNumber);
@@ -257,4 +260,155 @@ test('composeTx accessList', async () => {
   const result = await ethereumProof.composeTx(txhash);
   expect("0x" + keccak256(result.tx).toString('hex')).toBe(txhash);
 });
+
+test('composeBlockHeader EIP4895', async () => {
+  const blockHeader = '0xe2f18d088596647916c58e828580822f84287d282ee8575843824a690969f01b';
+  let web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  web3.eth.blocks = testBlockData;
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeBlockHeader(8663139);
+  expect("0x" + keccak256(result.header).toString('hex')).toBe(blockHeader);
+});
+
+/*test('composeTx EIP4844', async () => {
+  const txHash = '0x6e3bf401a2a8d217088baac236a2d936fca63a4bf1335cbb58cf6428a8ddbe1b';
+  let web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  web3.eth.blocks = testBlockData;
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeBlockHeader(8663139);
+  expect("0x" + keccak256(result.header).toString('hex')).toBe(blockHeader);
+});*/
+
+test('composeTx EIP4844', async () => {
+  const txhash = '0xd0f1d4fd2f7d8d4f45e684fa4781e014b46187ea610239cbb6dcacbd342aa541';
+  let web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  web3.eth.txs = testTxData;
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeTx(txhash);
+  expect("0x" + keccak256(result.tx).toString('hex')).toBe(txhash);
+});
+
+test('composeTx EIP4844 type3', async () => {
+  const txhash = '0x90eca9de964a301669e0286da2603762f549b569e4b00a933e2f0c0915799949';
+  let web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  web3.eth.txs = testTxData;
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeTx(txhash);
+  expect("0x" + keccak256(result.tx).toString('hex')).toBe(txhash);
+});
+
+test("composeBlockHeader Dencun", async () => {
+  const blockHeader = '0xb92ffc3b0f42953f3b1567336dd16a519f12eaea436446c04178ab13b22feb6a';
+  let web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  web3.eth.blocks = testBlockData;
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeBlockHeader(5236821);
+  console.log(result)
+  expect("0x" + keccak256(result.header).toString('hex')).toBe(blockHeader);
+});
+
+test("composeBlockHeader Dencun2", async () => {
+  const blockHeader = '0x93aa6af9a6ffeab3d31bee86afcf7bda03c010201377ea0b1fdc9ae515ede028';
+  let web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  web3.eth.blocks = testBlockData;
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeBlockHeader(5237179);
+  console.log(result)
+  expect("0x" + keccak256(result.header).toString('hex')).toBe(blockHeader);
+});
+
+test('composeTx dencun', async () => {
+  const txhash = '0x38e10380df2c44af76e6edfa63e13c27544ffb0538c86804ada61be4e5f25d55';
+  let web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  web3.eth.txs = testTxData;
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeTx(txhash);
+  expect("0x" + keccak256(result.tx).toString('hex')).toBe(txhash);
+});
+
+/*test('composeEvidence before dencun', async () => {
+
+  const txhash = '0x2e572de79937801f88e493b805e285a30a0348f174a915f32289c4ce96ecf881';
+  let web3 = new Web3Real(new Web3Real.providers.HttpProvider('https://rpc.sepolia.org'))
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeEvidence(txhash, true);
+  console.log(result)
+  expect("0x" + keccak256(result.transaction).toString('hex')).toBe(txhash);
+  const txProofBuffer = result.txProof.map((x) => {return Buffer.from(x.slice(2), 'hex');});
+  const indexString = result.path.join("");
+  const txRoot = "0x476b9c9e4a6911d72c5ffcaded127f0646ff99848807a577ef5b6a88e6bd01f5"
+  const txFromProof = await Trie.verifyProof(Buffer.from(txRoot.slice(2), 'hex'), Buffer.from(indexString, 'hex'), txProofBuffer) as Buffer;
+  expect("0x" + txFromProof.toString('hex')).toBe(result.transaction);
+}, 300000);*/
+
+/*test('composeEvidence dencun', async () => {
+
+  const txhash = '0x5025d018eb42a4e52d7497a84204ea675d00cf94d3ba37a4fe4d8693fa07666c';
+  //let web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  let web3 = new Web3Real(new Web3Real.providers.HttpProvider('https://rpc.sepolia.org'))
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeEvidence(txhash, true);
+  console.log(result)
+  expect("0x" + keccak256(result.transaction).toString('hex')).toBe(txhash);
+  const txProofBuffer = result.txProof.map((x) => {return Buffer.from(x.slice(2), 'hex');});
+  const indexString = result.path.join("");
+  const txRoot = "0x299c3f64b29bfbe90d80355862dcdd5cb9e98f073396406e92ad9f90b1af6f55"
+  const txFromProof = await Trie.verifyProof(Buffer.from(txRoot.slice(2), 'hex'), Buffer.from(indexString, 'hex'), txProofBuffer) as Buffer;
+  expect("0x" + txFromProof.toString('hex')).toBe(result.transaction);
+}, 300000);*/
+
+/*test('composeTx type3', async () => {
+  const txhash = '0xe70153415ad0014467858da4c1bfe8987c18ee74c616024aebe92dff859c2e05';
+  let web3 = new Web3Real(new Web3Real.providers.HttpProvider('https://rpc.sepolia.org'))
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeTx(txhash);
+  console.log(result)
+  expect("0x" + keccak256(result.tx).toString('hex')).toBe(txhash);
+});
+
+test('composeTx type0', async () => {
+  const txhash = '0x1ec322864d499adf5b6f1e27d9ef0a0c8be87a1dc89f88c33480aad26f227bbb';
+  let web3 = new Web3Real(new Web3Real.providers.HttpProvider('https://rpc.sepolia.org'))
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeTx(txhash);
+  console.log(result)
+  expect("0x" + keccak256(result.tx).toString('hex')).toBe(txhash);
+});*/
+
+/*test('composeEvidence type0', async () => {
+  const txhash = '0x1ec322864d499adf5b6f1e27d9ef0a0c8be87a1dc89f88c33480aad26f227bbb';
+  //let web3 = new Web3Real(new Web3Real.providers.HttpProvider('https://rpc.sepolia.org'))
+  let web3 = new Web3Real(new Web3Real.providers.HttpProvider('https://eth-sepolia-public.unifra.io'))
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeEvidence(txhash, true);
+  console.log(result)
+  //expect("0x" + keccak256(result.tx).toString('hex')).toBe(txhash);
+}, 300000);*/
+
+/*test('composeEvidence type3', async () => {
+  const txhash = '0xe70153415ad0014467858da4c1bfe8987c18ee74c616024aebe92dff859c2e05';
+  //let web3 = new Web3Real(new Web3Real.providers.HttpProvider('https://rpc.sepolia.org'))
+  let web3 = new Web3Real(new Web3Real.providers.HttpProvider('https://eth-sepolia-public.unifra.io'))
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeEvidence(txhash, true);
+  console.log(result)
+  //expect("0x" + keccak256(result.tx).toString('hex')).toBe(txhash);
+}, 300000);*/
+
+/*test('composeEvidence short r', async () => {
+  const txhash = '0xb99e2d460b33784a75b125b1ce96eb14d577894d84ca217486565fc755fb2e8a';
+  //let web3 = new Web3Real(new Web3Real.providers.HttpProvider('https://rpc.sepolia.org'))
+  let web3 = new Web3Real(new Web3Real.providers.HttpProvider('https://eth-sepolia-public.unifra.io'))
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeEvidence(txhash, true);
+  console.log(result)
+  //expect("0x" + keccak256(result.tx).toString('hex')).toBe(txhash);
+}, 300000);*/
+
+
+//type3
+//0xe70153415ad0014467858da4c1bfe8987c18ee74c616024aebe92dff859c2e05
+//
+//type0
+//0x1ec322864d499adf5b6f1e27d9ef0a0c8be87a1dc89f88c33480aad26f227bbb
 

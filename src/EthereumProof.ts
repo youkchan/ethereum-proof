@@ -1,6 +1,7 @@
 //import Web3Service from './Web3Service'
 import * as rlp from "rlp";
 import { BaseTrie as Trie } from 'merkle-patricia-tree'
+//import { Trie } from '@ethereumjs/trie'
 import Web3 from 'web3'
 import BN from'bn.js';
 
@@ -64,8 +65,7 @@ export default class EthereumProof {
  
       if(response.type == "0x" || response.type == undefined) {
         txData1.gasPrice = response.gasPrice;
-      }
-      else if(response.type == "0x01") {
+      } else if(response.type == "0x01") {
         txData1.gasPrice = response.gasPrice;
       } else {
         txData1.maxPriorityFeePerGas = response.maxPriorityFeePerGas;
@@ -77,9 +77,14 @@ export default class EthereumProof {
       txData1.data =  response.input;
  
       if(response.type != "0x" && response.type != undefined) {
-          txData1.accessList =  response.accessList.map((item: any) => {
-            return Object.values(item);
-          });
+        txData1.accessList =  response.accessList.map((item: any) => {
+          return Object.values(item);
+        });
+      }
+
+      if(response.type == "0x03" && response.type != undefined) {
+        txData1.maxFeePerBlobGas =  response.maxFeePerBlobGas
+        txData1.blobVersionedHashes =  response.blobVersionedHashes
       }
  
       txData1.v = response.v;
@@ -87,9 +92,9 @@ export default class EthereumProof {
       txData1.s = response.s;
 
       let bufferTx = rlp.encode(Object.values(txData1));
-       if(response.type != "0x" && response.type != undefined) {
-         bufferTx = Buffer.concat([Buffer.from(response.type.slice(2), 'hex'), bufferTx]);
-       }
+      if(response.type != "0x" && response.type != undefined) {
+        bufferTx = Buffer.concat([Buffer.from(response.type.slice(2), 'hex'), bufferTx]);
+      }
 
       return {index: response.transactionIndex, tx: bufferTx, rawTx: txData1, txType: response.type};
 
@@ -126,7 +131,7 @@ export default class EthereumProof {
       let block: any;
       block = await this.web3.eth.getBlock(_blockNumber);
       block = this.toRlpEncodableObject(block);
-      const list = [
+      let list = [
         block.parentHash,
         block.sha3Uncles,
         block.miner,
@@ -144,6 +149,27 @@ export default class EthereumProof {
         block.nonce,
         block.baseFeePerGas
       ];
+
+      if(block.withdrawalsRoot != undefined && block.withdrawalsRoot != "") {
+        list.push(block.withdrawalsRoot);
+      }
+
+      if(block.blobGasUsed != undefined && block.blobGasUsed != "") {
+        list.push(block.blobGasUsed);
+      }
+
+      if(block.excessBlobGas != undefined && block.excessBlobGas != "") {
+        list.push(block.excessBlobGas);
+      }
+
+      if(block.parentBeaconBlockRoot != undefined && block.parentBeaconBlockRoot != "") {
+        list.push(block.parentBeaconBlockRoot);
+      }
+
+      if(block.requestsHash != undefined && block.requestsHash != "") {
+        list.push(block.requestsHash);
+      }
+
       return {header: rlp.encode(list), rawHeader: list};
 
     }
@@ -159,12 +185,14 @@ export default class EthereumProof {
             path: Array<any>,
             txReceipt: string ,
             rawTx: Array<any>,
-            rawBlockHeader : Array<any>
+            rawBlockHeader : Array<any>,
+            txType: number, 
         }>{
       try {
         console.log("Start Compose Evidence");
         let response: any;
         response = await this.web3.eth.getTransaction(_changerTxHash);
+        const txType = response.type
         const changerTx = await this.composeTx(_changerTxHash);
         const changerTxIndex = rlp.encode(changerTx.index);
         const isEther = response.value !== "0" ? true : false;
@@ -229,6 +257,7 @@ export default class EthereumProof {
           txReceipt: encodedTxReceipt, 
           rawTx: rawTx,
           rawBlockHeader: rawBlockHeader,
+          txType: txType
         };
       } catch (err: any) {
         console.log(err);

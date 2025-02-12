@@ -4,8 +4,8 @@ var eth = {
         blocks: [],
         receipt: {}
     },
-    moment = require('moment'),
-    BigNumber = require('bignumber.js');
+moment = require('moment'),
+BigNumber = require('bignumber.js');
 
 // Mock the last ten blocks
 var testBlock = {
@@ -31,8 +31,8 @@ var testBlock = {
         transactions: [],
         transactionsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
         uncles: []
-    },
-    lastBlocks = {};
+    }
+lastBlocks = {};
 
 (function(){
 
@@ -74,8 +74,7 @@ eth.getBlockNumber = async function(callBack){
 
 // Only retrieves block by number atm
 eth.getBlock = async function(blockNumber){
-
-  
+ 
   const block = eth.blocks.find(block => block.number == blockNumber);
   return block;
 
