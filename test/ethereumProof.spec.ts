@@ -326,6 +326,18 @@ test('composeTx dencun', async () => {
   expect("0x" + keccak256(result.tx).toString('hex')).toBe(txhash);
 });
 
+test("composeBlockHeader EIP7685 temporarily", async () => {
+  const blockHeader = '0x59976d7dedf0eab9ee3d421c8aa8c60494c7dbbc00cde88fb643dec488a95b0c';
+  let web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  web3.eth.blocks = testBlockData;
+  ethereumProof = new EthereumProof(web3);
+  const result = await ethereumProof.composeBlockHeader(5237180);
+  console.log(result.rawHeader)
+  expect(result.rawHeader[result.rawHeader.length - 1]).toBe("0x5dde95e71646a56cc424cbd12908ca08a3d0f22eeeb9338058f43376a1f14460");
+  expect("0x" + keccak256(result.header).toString('hex')).not.toBe(blockHeader);
+});
+
+
 /*test('composeEvidence before dencun', async () => {
 
   const txhash = '0x2e572de79937801f88e493b805e285a30a0348f174a915f32289c4ce96ecf881';
