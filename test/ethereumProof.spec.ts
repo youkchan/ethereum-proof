@@ -423,4 +423,3 @@ test('composeTx type0', async () => {
 //
 //type0
 //0x1ec322864d499adf5b6f1e27d9ef0a0c8be87a1dc89f88c33480aad26f227bbb
-
