@@ -2,14 +2,16 @@
 import * as rlp from "rlp";
 import { BaseTrie as Trie } from 'merkle-patricia-tree'
 //import { Trie } from '@ethereumjs/trie'
-import Web3 from 'web3'
 import BN from'bn.js';
+import { createEthereumClientAdapter, EthereumClientAdapter, EthereumClientKind, EthereumClientKindInput } from './EthereumClient';
 
 export default class EthereumProof {
-//    web3 : Web3Service;
-    web3 : Web3;
-    constructor(web3 : Web3) {
-        this.web3 = web3;
+    client: EthereumClientAdapter;
+    clientKind: EthereumClientKind;
+    constructor(provider: any, kind?: EthereumClientKindInput) {
+        const { adapter, kind: resolvedKind } = createEthereumClientAdapter(provider, kind);
+        this.client = adapter;
+        this.clientKind = resolvedKind;
     }
 
     intToHex(_integer: number) : string{
@@ -53,7 +55,7 @@ export default class EthereumProof {
 
     async composeTx(_txHash: string) : Promise<{index: string, tx: Buffer, rawTx: any, txType: string}>{
       let response: any;
-      response = await this.web3.eth.getTransaction(_txHash);
+      response = await this.client.getTransaction(_txHash);
       const txData1: any = {};
       response = this.toRlpEncodableObject(response);
  
@@ -101,19 +103,20 @@ export default class EthereumProof {
     }
 
     async composeTxReceipt(_txHash: string, _txType: string) : Promise<{txReceipt: Buffer, rawTxReceipt: Array<any>}>{
-     const response = await this.web3.eth.getTransactionReceipt(_txHash);
+     const response = await this.client.getTransactionReceipt(_txHash);
 
      const logs : Array<any> = [];
-     for(let i = 0; i < response.logs.length; i++) {
+     const receiptLogs = response.logs ?? [];
+     for(let i = 0; i < receiptLogs.length; i++) {
        const tmp : Array<any> = [];
-       tmp.push(response.logs[i].address);
-       tmp.push(response.logs[i].topics);
-       tmp.push(response.logs[i].data);
+       tmp.push(receiptLogs[i].address);
+       tmp.push(receiptLogs[i].topics);
+       tmp.push(receiptLogs[i].data);
        logs.push(tmp);
      }
      const receipt = [
        response.status ? "0x01" : "0x" ,
-       await this.web3.utils.toHex(response.cumulativeGasUsed),
+       this.client.toHex(response.cumulativeGasUsed),
        response.logsBloom,
        logs,
      ]
@@ -129,7 +132,7 @@ export default class EthereumProof {
 
     async composeBlockHeader(_blockNumber: number) : Promise<{header: Buffer, rawHeader: any}>{
       let block: any;
-      block = await this.web3.eth.getBlock(_blockNumber);
+      block = await this.client.getBlock(_blockNumber);
       block = this.toRlpEncodableObject(block);
       let list = [
         block.parentHash,
@@ -176,7 +179,7 @@ export default class EthereumProof {
 
     async composeEvidence(_changerTxHash: string, _isFullEvidenceNeeded: boolean)  
         : Promise<{
-            blockNumber: string, 
+            blockNumber: number | string | undefined, 
             blockHash: string, 
             txReceiptProof: Array<string>, 
             txProof: Array<string>, 
@@ -186,16 +189,33 @@ export default class EthereumProof {
             txReceipt: string ,
             rawTx: Array<any>,
             rawBlockHeader : Array<any>,
-            txType: number, 
+            txType: string | undefined, 
         }>{
       try {
         console.log("Start Compose Evidence");
         let response: any;
-        response = await this.web3.eth.getTransaction(_changerTxHash);
+        response = await this.client.getTransaction(_changerTxHash);
         const txType = response.type
         const changerTx = await this.composeTx(_changerTxHash);
         const changerTxIndex = rlp.encode(changerTx.index);
-        const isEther = response.value !== "0" ? true : false;
+        let blockNumberNumeric: number | undefined;
+        if (response.blockNumber !== undefined && response.blockNumber !== null) {
+          if (typeof response.blockNumber === "string") {
+            blockNumberNumeric = response.blockNumber.startsWith("0x")
+              ? parseInt(response.blockNumber, 16)
+              : parseInt(response.blockNumber, 10);
+          } else {
+            blockNumberNumeric = response.blockNumber;
+          }
+        }
+        const isEther = !(
+          response.value === "0" ||
+          response.value === "0x" ||
+          response.value === "0x0" ||
+          response.value === 0 ||
+          response.value === null ||
+          response.value === undefined
+        );
         let encodedTxReceipt = "0x";
         if(!isEther) {
           const changerTxReceipt =await this.composeTxReceipt(_changerTxHash, changerTx.txType);
@@ -208,8 +228,11 @@ export default class EthereumProof {
         let rawBlockHeader: Array<any> = [];
         let rawTx: Array<any> = [];
         if(_isFullEvidenceNeeded) {
-          const block = await this.web3.eth.getBlock(response.blockNumber);
-          const composedBlockHeader = await this.composeBlockHeader(response.blockNumber);
+          if (blockNumberNumeric === undefined) {
+            throw new Error('Block number is required for full evidence composition.');
+          }
+          const block = await this.client.getBlock(blockNumberNumeric);
+          const composedBlockHeader = await this.composeBlockHeader(blockNumberNumeric);
           rawBlockHeader = composedBlockHeader.rawHeader;
           rawTx = Object.values(changerTx.rawTx)
           const txs = block.transactions;
@@ -247,7 +270,7 @@ export default class EthereumProof {
         console.log("End Compose Evidence Successfully");
         return {
           //blockNumber: await this.web3.utils.toHex(response.blockNumber), 
-          blockNumber: response.blockNumber, 
+          blockNumber: blockNumberNumeric ?? response.blockNumber, 
           blockHash: response.blockHash,
           txReceiptProof: stringReceiptProofArray, 
           txProof: stringProofArray,
